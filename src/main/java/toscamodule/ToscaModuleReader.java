@@ -1,7 +1,10 @@
 package toscamodule;
 
+import java.io.IOException;
+
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -14,9 +17,6 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.json.XML;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 
 public class ToscaModuleReader {
     private static final String TOSCA_API_URL = "http://172.40.0.31/Rest/ToscaCommander";
