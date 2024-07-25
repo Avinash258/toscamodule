@@ -1,7 +1,12 @@
 package toscamodule;
 
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -18,35 +23,79 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
-public class ToscaModuleReader {
+public class ToscaModuleReader extends Application {
     private static final String TOSCA_API_URL = "http://172.40.0.31/Rest/ToscaCommander";
     private static final String MODULE_ID = "3a13adbd-09a7-cf42-f559-eabc87b8b8ec";
-    private static final String USERNAME = "Admin";
-    private static final String WORKSPACE = "NV_PROJECT";
-    private static final String PASSWORD = System.getenv("TOSCA_PASSWORD") != null ? System.getenv("TOSCA_PASSWORD") : "";
+    private static String username = "Admin";
+    private static String workspace = "NV_PROJECT";
+    private static String password = "";
 
     public static void main(String[] args) {
-        try {
-            String response = getModule(MODULE_ID);
-            if (response != null) {
-                System.out.println(response);
-            } else {
-                System.err.println("Failed to retrieve response.");
-            }
-        } catch (Exception e) {
-            System.err.println("An error occurred while trying to fetch the module:");
-            e.printStackTrace();
-        }
+        launch(args);
     }
 
-    private static String getModule(String moduleId) throws IOException, ParserConfigurationException, SAXException {
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Tosca Module Reader");
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        grid.setVgap(8);
+        grid.setHgap(10);
+
+        Label instanceUrlLabel = new Label("Instance URL:");
+        GridPane.setConstraints(instanceUrlLabel, 0, 0);
+        TextField instanceUrlInput = new TextField(TOSCA_API_URL);
+        GridPane.setConstraints(instanceUrlInput, 1, 0);
+
+        Label usernameLabel = new Label("Username:");
+        GridPane.setConstraints(usernameLabel, 0, 1);
+        TextField usernameInput = new TextField(username);
+        GridPane.setConstraints(usernameInput, 1, 1);
+
+        Label passwordLabel = new Label("Password:");
+        GridPane.setConstraints(passwordLabel, 0, 2);
+        PasswordField passwordInput = new PasswordField();
+        GridPane.setConstraints(passwordInput, 1, 2);
+
+        Label workspaceLabel = new Label("Workspace:");
+        GridPane.setConstraints(workspaceLabel, 0, 3);
+        TextField workspaceInput = new TextField(workspace);
+        GridPane.setConstraints(workspaceInput, 1, 3);
+
+        Button submitButton = new Button("Submit");
+        GridPane.setConstraints(submitButton, 1, 4);
+
+        grid.getChildren().addAll(instanceUrlLabel, instanceUrlInput, usernameLabel, usernameInput,
+                passwordLabel, passwordInput, workspaceLabel, workspaceInput, submitButton);
+
+        submitButton.setOnAction(e -> {
+            String instanceUrl = instanceUrlInput.getText();
+            username = usernameInput.getText();
+            password = passwordInput.getText();
+            workspace = workspaceInput.getText();
+
+            try {
+                String response = getModule(instanceUrl, MODULE_ID);
+                showResponseWindow(response);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Scene scene = new Scene(grid, 300, 200);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private static String getModule(String instanceUrl, String moduleId) throws IOException, ParserConfigurationException, SAXException {
         CredentialsProvider credsProvider = new BasicCredentialsProvider();
-        credsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(USERNAME, PASSWORD));
+        credsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
 
         try (CloseableHttpClient httpClient = HttpClients.custom()
                 .setDefaultCredentialsProvider(credsProvider)
                 .build()) {
-            HttpGet request = new HttpGet(TOSCA_API_URL + "/" + WORKSPACE + "/object/" + moduleId);
+            HttpGet request = new HttpGet(instanceUrl + "/" + workspace + "/object/" + moduleId);
             System.out.println("Executing request: " + request.getRequestLine());
 
             try (CloseableHttpResponse response = httpClient.execute(request)) {
@@ -95,4 +144,10 @@ public class ToscaModuleReader {
         JSONObject xmlJSONObj = XML.toJSONObject(xmlString);
         return xmlJSONObj.toString(4); // 4 is the number of spaces for indentation
     }
-}
+
+    private void showResponseWindow(String response) {
+        Stage responseStage = new Stage();
+        responseStage.setTitle("Module Response");
+
+        TextArea textArea = new TextArea();
+        textArea.set
